@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import {CovidProvider} from "@/contexts/covid-context";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +30,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider>
-          {children}
-        </SidebarProvider>
+        <CovidProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                <SidebarTrigger className="-ml-1" />
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg font-semibold">COVID-19 Data Visualization</h1>
+                </div>
+              </header>
+              <main className="flex flex-1 flex-col gap-4 p-4">
+                {children}
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+        </CovidProvider>
       </body>
     </html>
   );

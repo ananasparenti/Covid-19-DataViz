@@ -1,66 +1,282 @@
-import Image from "next/image";
-import { AppSidebar } from "@/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+'use client';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useCovid } from '@/contexts/covid-context';
+import { formatNumber } from '@/lib/utils';
 
 export default function Home() {
-  return (
-    <>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="h-4 w-px bg-sidebar-border" />
-            <h1 className="text-lg font-semibold">COVID-19 Data Visualization</h1>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-            <div className="aspect-video rounded-xl bg-muted/50" />
-          </div>
-          <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min">
-            <div className="p-8">
-              <div className="flex flex-col gap-[32px] items-center sm:items-start">
-                <Image
-                  className="dark:invert"
-                  src="/next.svg"
-                  alt="Next.js logo"
-                  width={180}
-                  height={38}
-                  priority
-                />
-                <div className="text-center sm:text-left">
-                  <h2 className="text-2xl font-bold mb-4">Welcome to COVID-19 Data Visualization</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Explore comprehensive COVID-19 data through interactive charts and visualizations.
-                    Use the sidebar to navigate between different sections of the dashboard.
-                  </p>
-                </div>
+  const { global, loading, error, lastUpdate, topCountries, loadData } = useCovid();
 
-                <div className="flex gap-4 items-center flex-col sm:flex-row">
-                  <a
-                    className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-                    href="/global"
-                  >
-                    View Global Data
-                  </a>
-                  <a
-                    className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-                    href="/charts"
-                  >
-                    Explore Charts
-                  </a>
-                </div>
-              </div>
-            </div>
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-destructive">Erreur de chargement</h1>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+          <Button onClick={loadData} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const getTrendIcon = (todayValue: number) => {
+    if (todayValue > 0) return <TrendingUp className="h-4 w-4 text-red-500" />;
+    if (todayValue < 0) return <TrendingDown className="h-4 w-4 text-green-500" />;
+    return <Minus className="h-4 w-4 text-gray-500" />;
+  };
+
+  const getTrendColor = (todayValue: number) => {
+    if (todayValue > 0) return "text-red-600";
+    if (todayValue < 0) return "text-green-600";
+    return "text-gray-600";
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">COVID-19 Dashboard</h1>
+          <p className="text-muted-foreground">
+            Visualisation en temps réel des données de la pandémie mondiale
+          </p>
+          {lastUpdate && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Dernière mise à jour : {lastUpdate}
+            </p>
+          )}
+        </div>
+        <Button onClick={loadData} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Actualiser
+        </Button>
+      </div>
+      
+      {/* Global Statistics Cards */}
+      {global && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title="Cas confirmés"
+            value={global.confirmed}
+            todayValue={global.todayCases}
+            variant="secondary"
+            description="Total des cas confirmés"
+          />
+          
+          <StatsCard
+            title="Décès"
+            value={global.deaths}
+            todayValue={global.todayDeaths}
+            variant="destructive"
+            description="Total des décès"
+          />
+          
+          <StatsCard
+            title="Guérisons"
+            value={global.recovered}
+            todayValue={0} // API ne fournit plus les guérisons du jour
+            variant="default"
+            description="Total des guérisons"
+          />
+          
+          <StatsCard
+            title="Cas actifs"
+            value={global.active}
+            todayValue={0}
+            variant="outline"
+            description="Cas en cours de traitement"
+          />
+        </div>
+      )}
+
+      {/* Top Countries */}
+      {topCountries && topCountries.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Top 10 des pays les plus touchés</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {topCountries.slice(0, 10).map((country: any, index: number) => (
+              <CountryCard
+                key={country.country}
+                country={country}
+                rank={index + 1}
+              />
+            ))}
           </div>
         </div>
-      </SidebarInset>
-    </>
+      )}
+    </div>
+  );
+}
+
+// Composant pour les cartes de statistiques
+interface StatsCardProps {
+  title: string;
+  value: number;
+  todayValue: number;
+  variant: "default" | "destructive" | "outline" | "secondary";
+  description: string;
+}
+
+function StatsCard({ title, value, todayValue, variant, description }: StatsCardProps) {
+  const getTrendIcon = (todayValue: number) => {
+    if (todayValue > 0) return <TrendingUp className="h-4 w-4 text-red-500" />;
+    if (todayValue < 0) return <TrendingDown className="h-4 w-4 text-green-500" />;
+    return <Minus className="h-4 w-4 text-gray-500" />;
+  };
+
+  const getTrendColor = (todayValue: number) => {
+    if (todayValue > 0) return "text-red-600";
+    if (todayValue < 0) return "text-green-600";
+    return "text-gray-600";
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Badge variant={variant}>Total</Badge>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{formatNumber(value)}</div>
+        <div className={`flex items-center text-xs ${getTrendColor(todayValue)}`}>
+          {getTrendIcon(todayValue)}
+          <span className="ml-1">
+            {todayValue > 0 ? '+' : ''}{formatNumber(todayValue)} aujourd'hui
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {description}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Composant pour les cartes de pays
+interface CountryCardProps {
+  country: {
+    country: string;
+    confirmed: number;
+    deaths: number;
+    recovered: number;
+    flag?: string;
+  };
+  rank: number;
+}
+
+function CountryCard({ country, rank }: CountryCardProps) {
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {country.flag && (
+              <img 
+                src={country.flag} 
+                alt={`${country.country} flag`}
+                className="w-6 h-4 object-cover rounded"
+              />
+            )}
+            <CardTitle className="text-lg">{country.country}</CardTitle>
+          </div>
+          <Badge variant="outline">#{rank}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          <div>
+            <p className="text-muted-foreground">Cas</p>
+            <p className="font-semibold text-blue-600">{formatNumber(country.confirmed)}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Décès</p>
+            <p className="font-semibold text-red-600">{formatNumber(country.deaths)}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Guérisons</p>
+            <p className="font-semibold text-green-600">{formatNumber(country.recovered)}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Composant de loading
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96 mt-2" />
+          <Skeleton className="h-3 w-48 mt-2" />
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </div>
+      
+      {/* Stats cards skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardHeader className="space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-5 w-12" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-4 w-28 mt-2" />
+              <Skeleton className="h-3 w-32 mt-1" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Top countries skeleton */}
+      <div className="space-y-4">
+        <Skeleton className="h-6 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Skeleton className="w-6 h-4 rounded" />
+                    <Skeleton className="h-5 w-24" />
+                  </div>
+                  <Skeleton className="h-5 w-8" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j}>
+                      <Skeleton className="h-3 w-8" />
+                      <Skeleton className="h-4 w-12 mt-1" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

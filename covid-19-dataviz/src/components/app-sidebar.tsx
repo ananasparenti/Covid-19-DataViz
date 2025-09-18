@@ -34,34 +34,9 @@ const items = [
     icon: Home,
   },
   {
-    title: "Global Statistics",
-    url: "/global",
+    title: "WorldMap",
+    url: "/worldmap",
     icon: Globe,
-  },
-  {
-    title: "Country Analysis",
-    url: "/countries",
-    icon: Map,
-  },
-  {
-    title: "Trends",
-    url: "/trends",
-    icon: TrendingUp,
-  },
-  {
-    title: "Demographics",
-    url: "/demographics",
-    icon: Users,
-  },
-  {
-    title: "Charts",
-    url: "/charts",
-    icon: BarChart3,
-  },
-  {
-    title: "Timeline",
-    url: "/timeline",
-    icon: Calendar,
   },
 ]
 
