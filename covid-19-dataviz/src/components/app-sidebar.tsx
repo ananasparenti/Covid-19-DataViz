@@ -3,13 +3,9 @@
 import * as React from "react"
 import {
   BarChart3,
-  Calendar,
   Globe,
   Home,
-  Map,
   Settings,
-  TrendingUp,
-  Users,
 } from "lucide-react"
 
 import {
@@ -26,11 +22,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// Menu items for COVID-19 data visualization
 const items = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/datacovid",
     icon: Home,
   },
   {
