@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCovid } from '@/contexts/covid-context';
+import { useCovidData } from '@/services/covidContext';
 
 // Import dynamique pour éviter les erreurs SSR avec Leaflet sinon kaboum
 const MapContainer = dynamic(
@@ -70,12 +70,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
   
   // Utiliser le contexte COVID
   const { 
-    countries, 
-    global,
+    allData,
+    availableCountries,
     loading, 
     error, 
-    loadData 
-  } = useCovid();
+    loadAllData,
+    getTopCountries,
+    selectedDataType
+  } = useCovidData();
 
   useEffect(() => {
     setIsClient(true);
@@ -83,20 +85,41 @@ const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
 
   // Fonction pour transformer les données du contexte en format pour la carte
   const transformCovidDataToMapData = (): CountryData[] => {
-    if (!countries || countries.length === 0) return [];
+    if (!allData || !allData.confirmed) return [];
 
-    return countries
-      .filter((country: any) => country.confirmed > 0 || country.deaths > 0)
-      .map((country: any) => ({
-        country: country.country,
-        lat: country.countryInfo?.lat || 0,
-        lng: country.countryInfo?.long || 0,
-        confirmed: country.confirmed || 0,
-        deaths: country.deaths || 0,
-        active: country.active || 0,
-        population: country.population,
-        flag: countryFlags[country.country] || "🌍"
-      }))
+    const countries = Object.keys(allData.confirmed.countries);
+    
+    const mappedCountries: CountryData[] = [];
+    
+    countries.forEach((countryName: string) => {
+      const confirmedData = allData.confirmed.countries[countryName];
+      const deathsData = allData.deaths?.countries[countryName];
+      const activeData = allData.active?.countries[countryName];
+      
+      if (!confirmedData) return;
+      
+      // Obtenir les dernières valeurs
+      const confirmedDates = Object.keys(confirmedData.total).sort();
+      const lastDate = confirmedDates[confirmedDates.length - 1];
+      
+      const confirmed = confirmedData.total[lastDate] || 0;
+      const deaths = deathsData?.total[lastDate] || 0;
+      const active = activeData?.total[lastDate] || 0;
+      
+      if (confirmed > 0 || deaths > 0) {
+        mappedCountries.push({
+          country: countryName,
+          lat: confirmedData.coordinates?.lat || 0,
+          lng: confirmedData.coordinates?.long || 0,
+          confirmed,
+          deaths,
+          active,
+          flag: countryFlags[countryName] || "🌍"
+        });
+      }
+    });
+    
+    return mappedCountries
       .sort((a: CountryData, b: CountryData) => b.confirmed - a.confirmed)
       .slice(0, 50);
   };
@@ -151,7 +174,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
             {error}
           </p>
           <button 
-            onClick={loadData}
+            onClick={loadAllData}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
           >
             Réessayer
@@ -318,12 +341,6 @@ const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
                     <p className="text-gray-400">Décès</p>
                     <p className="font-bold text-red-400">
                       {formatNumber(selectedCountry.deaths)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Cas actifs</p>
-                    <p className="font-bold text-green-400">
-                      {formatNumber(selectedCountry.active)}
                     </p>
                   </div>
                   <div>

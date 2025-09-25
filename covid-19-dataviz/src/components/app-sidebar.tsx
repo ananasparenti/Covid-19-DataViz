@@ -42,12 +42,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <BarChart3 className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25">
+                <span className="text-lg">🦠</span>
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">COVID-19 DataViz</span>
-                <span className="truncate text-xs">Analytics Dashboard</span>
+                <span className="truncate text-xs">Tableau de bord en temps réel</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

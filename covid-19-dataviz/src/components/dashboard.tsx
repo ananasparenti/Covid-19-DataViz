@@ -1,5 +1,6 @@
 import React from 'react';
 import { CovidProvider, useCovidData, useCovidStats } from '@/services/covidContext';
+import { BarChart3 } from 'lucide-react';
 
 interface CountryTimeSeriesData {
   total: Record<string, number>;
@@ -610,7 +611,7 @@ const CovidDashboardContent: React.FC = () => {
               </div>
               <div className="text-left">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-green-400 bg-clip-text text-transparent">
-                  COVID-19 Analytics
+                  COVID-19 DataViz
                 </h1>
                 <p className="text-gray-400 text-lg">
                   Tableau de bord en temps réel
