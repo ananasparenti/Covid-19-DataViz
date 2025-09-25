@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCovid } from '@/contexts/covid-context';
 
-// Import dynamique pour éviter les erreurs SSR avec Leaflet
+// Import dynamique pour éviter les erreurs SSR avec Leaflet sinon kaboum
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
   { ssr: false }
@@ -32,144 +32,76 @@ const CircleMarker = dynamic(
   { ssr: false }
 );
 
-// Interface pour les données de pays
 interface CountryData {
   country: string;
   lat: number;
   lng: number;
   confirmed: number;
   deaths: number;
-  recovered: number;
   active: number;
   population?: number;
   flag?: string;
 }
 
-// Données d'exemple pour quelques pays (vous pouvez les étendre ou les récupérer via API)
-const sampleCountriesData: CountryData[] = [
-  {
-    country: "United States",
-    lat: 39.8283,
-    lng: -98.5795,
-    confirmed: 103436829,
-    deaths: 1127152,
-    recovered: 101309677,
-    active: 1000000,
-    population: 331002651,
-    flag: "🇺🇸"
-  },
-  {
-    country: "China",
-    lat: 35.8617,
-    lng: 104.1954,
-    confirmed: 99311332,
-    deaths: 121938,
-    recovered: 99189394,
-    active: 0,
-    population: 1439323776,
-    flag: "🇨🇳"
-  },
-  {
-    country: "India",
-    lat: 20.5937,
-    lng: 78.9629,
-    confirmed: 44999721,
-    deaths: 530779,
-    recovered: 44468942,
-    active: 0,
-    population: 1380004385,
-    flag: "🇮🇳"
-  },
-  {
-    country: "France",
-    lat: 46.2276,
-    lng: 2.2137,
-    confirmed: 38997490,
-    deaths: 174020,
-    recovered: 38823470,
-    active: 0,
-    population: 65273511,
-    flag: "🇫🇷"
-  },
-  {
-    country: "Germany",
-    lat: 51.1657,
-    lng: 10.4515,
-    confirmed: 38437756,
-    deaths: 174979,
-    recovered: 38262777,
-    active: 0,
-    population: 83783942,
-    flag: "🇩🇪"
-  },
-  {
-    country: "Brazil",
-    lat: -14.2350,
-    lng: -51.9253,
-    confirmed: 37717062,
-    deaths: 704659,
-    recovered: 37012403,
-    active: 0,
-    population: 212559417,
-    flag: "🇧🇷"
-  },
-  {
-    country: "Japan",
-    lat: 36.2048,
-    lng: 138.2529,
-    confirmed: 33320438,
-    deaths: 74694,
-    recovered: 33245744,
-    active: 0,
-    population: 126476461,
-    flag: "🇯🇵"
-  },
-  {
-    country: "South Korea",
-    lat: 35.9078,
-    lng: 127.7669,
-    confirmed: 30562396,
-    deaths: 34424,
-    recovered: 30527972,
-    active: 0,
-    population: 51269185,
-    flag: "🇰🇷"
-  },
-  {
-    country: "Italy",
-    lat: 41.8719,
-    lng: 12.5674,
-    confirmed: 25603510,
-    deaths: 190357,
-    recovered: 25413153,
-    active: 0,
-    population: 60461826,
-    flag: "🇮🇹"
-  },
-  {
-    country: "Russia",
-    lat: 61.5240,
-    lng: 105.3188,
-    confirmed: 22075858,
-    deaths: 381065,
-    recovered: 21694793,
-    active: 0,
-    population: 145934462,
-    flag: "🇷🇺"
-  }
-];
+const countryFlags: { [key: string]: string } = {
+  "US": "🇺🇸",
+  "China": "🇨🇳", 
+  "India": "🇮🇳",
+  "France": "🇫🇷",
+  "Germany": "🇩🇪",
+  "Brazil": "🇧🇷",
+  "Japan": "🇯🇵",
+  "Korea, South": "🇰🇷",
+  "Italy": "🇮🇹",
+  "Russia": "🇷🇺",
+  "United Kingdom": "🇬🇧",
+  "Spain": "🇪🇸",
+  "Canada": "🇨🇦",
+  "Australia": "�🇺"
+};
 
 interface WorldMapProps {
   data?: CountryData[];
 }
 
-const WorldMap: React.FC<WorldMapProps> = ({ data = sampleCountriesData }) => {
+const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
   const [isClient, setIsClient] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<CountryData | null>(null);
+  
+  // Utiliser le contexte COVID
+  const { 
+    countries, 
+    global,
+    loading, 
+    error, 
+    loadData 
+  } = useCovid();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Fonction pour transformer les données du contexte en format pour la carte
+  const transformCovidDataToMapData = (): CountryData[] => {
+    if (!countries || countries.length === 0) return [];
+
+    return countries
+      .filter((country: any) => country.confirmed > 0 || country.deaths > 0)
+      .map((country: any) => ({
+        country: country.country,
+        lat: country.countryInfo?.lat || 0,
+        lng: country.countryInfo?.long || 0,
+        confirmed: country.confirmed || 0,
+        deaths: country.deaths || 0,
+        active: country.active || 0,
+        population: country.population,
+        flag: countryFlags[country.country] || "🌍"
+      }))
+      .sort((a: CountryData, b: CountryData) => b.confirmed - a.confirmed)
+      .slice(0, 50);
+  };
+
+  const data = externalData || transformCovidDataToMapData();
 
   // Fonction pour calculer la taille du marqueur basée sur le nombre de cas
   const getMarkerSize = (confirmed: number): number => {
@@ -193,10 +125,52 @@ const WorldMap: React.FC<WorldMapProps> = ({ data = sampleCountriesData }) => {
     return new Intl.NumberFormat('fr-FR').format(num);
   };
 
-  if (!isClient) {
+  // Gestion des états de chargement et d'erreur
+  if (!isClient || loading) {
     return (
       <div className="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center">
-        <Skeleton className="w-full h-full bg-gray-800" />
+        <div className="text-center space-y-4">
+          <Skeleton className="w-full h-full bg-gray-800" />
+          {loading && (
+            <p className="text-gray-400 text-sm">
+              Chargement des données COVID-19...
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center border border-red-700">
+        <div className="text-center space-y-4 p-6">
+          <div className="text-red-400 text-2xl">⚠️</div>
+          <h3 className="text-red-400 font-semibold">Erreur de chargement</h3>
+          <p className="text-gray-400 text-sm max-w-md">
+            {error}
+          </p>
+          <button 
+            onClick={loadData}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="w-full h-96 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700">
+        <div className="text-center space-y-4 p-6">
+          <div className="text-gray-400 text-2xl">📊</div>
+          <h3 className="text-gray-300 font-semibold">Aucune donnée disponible</h3>
+          <p className="text-gray-400 text-sm">
+            Les données COVID-19 ne sont pas encore chargées ou sont indisponibles.
+          </p>
+        </div>
       </div>
     );
   }
@@ -263,9 +237,9 @@ const WorldMap: React.FC<WorldMapProps> = ({ data = sampleCountriesData }) => {
                               </span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-300">Guérisons:</span>
+                              <span className="text-gray-300">Cas actifs:</span>
                               <span className="font-semibold text-green-400">
-                                {formatNumber(country.recovered)}
+                                {formatNumber(country.active)}
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -347,9 +321,9 @@ const WorldMap: React.FC<WorldMapProps> = ({ data = sampleCountriesData }) => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-400">Guérisons</p>
+                    <p className="text-gray-400">Cas actifs</p>
                     <p className="font-bold text-green-400">
-                      {formatNumber(selectedCountry.recovered)}
+                      {formatNumber(selectedCountry.active)}
                     </p>
                   </div>
                   <div>
@@ -394,9 +368,9 @@ const WorldMap: React.FC<WorldMapProps> = ({ data = sampleCountriesData }) => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Total guérisons:</span>
+                  <span className="text-gray-400">Total cas actifs:</span>
                   <span className="font-semibold text-green-400">
-                    {formatNumber(data.reduce((sum, country) => sum + country.recovered, 0))}
+                    {formatNumber(data.reduce((sum, country) => sum + country.active, 0))}
                   </span>
                 </div>
                 <div className="flex justify-between">
