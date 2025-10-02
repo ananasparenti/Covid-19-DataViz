@@ -341,26 +341,34 @@ export const useCovidStats = () => {
     const countryData = getSelectedCountryData();
     if (countryData) {
       // Calculer les stats pour le pays sélectionné
-      const stats = {};
+      const current = {};
+      const daily = {};
+      
       Object.keys(countryData).forEach(dataType => {
-        const dates = Object.keys(countryData[dataType].total).sort();
-        const lastDate = dates[dates.length - 1];
-        const prevDate = dates[dates.length - 2];
+        if (countryData[dataType] && countryData[dataType].total) {
+          const dates = Object.keys(countryData[dataType].total).sort();
+          const lastDate = dates[dates.length - 1];
+          const prevDate = dates[dates.length - 2];
 
-        stats[dataType] = {
-          current: countryData[dataType].total[lastDate] || 0,
-          daily: (countryData[dataType].total[lastDate] || 0) - 
-                 (countryData[dataType].total[prevDate] || 0)
-        };
+          current[dataType] = countryData[dataType].total[lastDate] || 0;
+          daily[dataType] = (countryData[dataType].total[lastDate] || 0) - 
+                           (countryData[dataType].total[prevDate] || 0);
+        } else {
+          current[dataType] = 0;
+          daily[dataType] = 0;
+        }
       });
-      return stats;
+      
+      return {
+        current,
+        daily
+      };
     }
   }
 
   return globalStats;
 };
 
-// Hook pour les avertissements de données obsolètes
 export const useDataWarnings = () => {
   const { dataFreshness, isDataStale } = useCovidData();
   

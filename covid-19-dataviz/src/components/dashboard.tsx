@@ -27,6 +27,7 @@ interface TimeSeriesEntry {
 
 const GlobalStats: React.FC = () => {
   const stats = useCovidStats();
+  const { selectedCountry } = useCovidData();
 
   if (!stats) return (
     <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 animate-pulse">
@@ -63,41 +64,52 @@ const GlobalStats: React.FC = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      {statsData.map((stat, index) => (
-        <div key={stat.title} className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient} bg-gray-900 border border-gray-700 rounded-xl p-6 hover:scale-105 transition-all duration-300 group`}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">{stat.icon}</span>
-                <h3 className="text-lg font-semibold text-gray-100 group-hover:text-white transition-colors">
-                  {stat.title}
-                </h3>
+    <div className="mb-8">
+      {/* Header indicator */}
+      {selectedCountry && (
+        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+          <p className="text-sm text-blue-300">
+            📍 Statistiques pour: <span className="font-medium">{selectedCountry}</span>
+          </p>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {statsData.map((stat, index) => (
+          <div key={stat.title} className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient} bg-gray-900 border border-gray-700 rounded-xl p-6 hover:scale-105 transition-all duration-300 group`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-2xl">{stat.icon}</span>
+                  <h3 className="text-lg font-semibold text-gray-100 group-hover:text-white transition-colors">
+                    {stat.title}
+                  </h3>
+                </div>
+                
+                <div className="space-y-2">
+                  <p className={`text-3xl font-bold text-${stat.color}-400 group-hover:text-${stat.color}-300 transition-colors`}>
+                    {stat.value.toLocaleString()}
+                  </p>
+                  
+                  <div className="flex items-center gap-2">
+                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${stat.color}-500/20 text-${stat.color}-300 border border-${stat.color}-500/30`}>
+                      <span className="mr-1">+</span>
+                      {stat.daily.toLocaleString()}
+                    </div>
+                    <span className="text-xs text-gray-400">aujourd'hui</span>
+                  </div>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <p className={`text-3xl font-bold text-${stat.color}-400 group-hover:text-${stat.color}-300 transition-colors`}>
-                  {stat.value.toLocaleString()}
-                </p>
-                
-                <div className="flex items-center gap-2">
-                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${stat.color}-500/20 text-${stat.color}-300 border border-${stat.color}-500/30`}>
-                    <span className="mr-1">+</span>
-                    {stat.daily.toLocaleString()}
-                  </div>
-                  <span className="text-xs text-gray-400">aujourd'hui</span>
-                </div>
+              <div className={`absolute top-4 right-4 w-16 h-16 bg-${stat.color}-500/10 rounded-full flex items-center justify-center group-hover:bg-${stat.color}-500/20 transition-colors`}>
+                <div className={`w-8 h-8 bg-${stat.color}-500/20 rounded-full`}></div>
               </div>
             </div>
             
-            <div className={`absolute top-4 right-4 w-16 h-16 bg-${stat.color}-500/10 rounded-full flex items-center justify-center group-hover:bg-${stat.color}-500/20 transition-colors`}>
-              <div className={`w-8 h-8 bg-${stat.color}-500/20 rounded-full`}></div>
-            </div>
+            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-${stat.color}-500 to-${stat.color}-400`}></div>
           </div>
-          
-          <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-${stat.color}-500 to-${stat.color}-400`}></div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
@@ -641,15 +653,20 @@ const CovidDashboardContent: React.FC = () => {
 
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Left Column - Controls */}
-          <div className="xl:col-span-1 space-y-6">
-            <CountrySelector />
-            <DataTypeSelector />
+          {/* Left Column - Top Countries */}
+          <div className="xl:col-span-1">
             <TopCountries />
           </div>
 
-          {/* Right Column - Data Visualization */}
-          <div className="xl:col-span-3">
+          {/* Right Column - Controls and Data Visualization */}
+          <div className="xl:col-span-3 space-y-6">
+            {/* Controls Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CountrySelector />
+              <DataTypeSelector />
+            </div>
+            
+            {/* Time Series Data */}
             <TimeSeriesData />
           </div>
         </div>

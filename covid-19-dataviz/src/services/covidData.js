@@ -277,7 +277,7 @@ class CovidData {
       const result = {
         confirmed,
         deaths,
-        active, // Remplace "recovered" par "active"
+        active,
         metadata: {
           lastUpdated: new Date().toISOString(),
           source: 'Johns Hopkins University CSSE',
@@ -356,7 +356,6 @@ class CovidData {
   async getGlobalStats() {
     const allData = await this.getAllData();
     
-    // Obtenir la dernière date disponible
     const dates = Object.keys(allData.confirmed.global).sort();
     const lastDate = dates[dates.length - 1];
     const prevDate = dates[dates.length - 2];
