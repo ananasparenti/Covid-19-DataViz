@@ -1,6 +1,8 @@
 import React from 'react';
 import { CovidProvider, useCovidData, useCovidStats } from '@/services/covidContext';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface CountryTimeSeriesData {
   total: Record<string, number>;
@@ -381,6 +383,210 @@ const TimeSeriesData: React.FC = () => {
   );
 };
 
+const CovidChart: React.FC = () => {
+  const { 
+    getGlobalDataByType, 
+    getSelectedCountryData, 
+    selectedCountry,
+    selectedDataType,
+    getTrend
+  } = useCovidData();
+
+  let data: Record<string, number> = {};
+  let title = 'Évolution des données COVID-19';
+  let subtitle = 'Données Globales';
+
+  if (selectedCountry) {
+    const countryData = getSelectedCountryData();
+    if (countryData && countryData[selectedDataType]) {
+      data = countryData[selectedDataType].total;
+      subtitle = selectedCountry;
+    }
+  } else {
+    data = getGlobalDataByType();
+    subtitle = 'Monde entier';
+  }
+
+  // Transformer les données pour le graphique (grouper par mois)
+  const dates = Object.keys(data).sort();
+  const monthlyData: Record<string, { total: number; count: number; lastDate: string }> = {};
+  
+  dates.forEach(date => {
+    const monthKey = new Date(date).toLocaleDateString('fr-FR', { 
+      year: 'numeric', 
+      month: 'short' 
+    });
+    
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { total: 0, count: 0, lastDate: date };
+    }
+    
+    // Prendre la dernière valeur du mois (valeur cumulative)
+    const currentDate = new Date(date);
+    const lastDate = new Date(monthlyData[monthKey].lastDate);
+    
+    if (currentDate >= lastDate) {
+      monthlyData[monthKey].total = data[date] || 0;
+      monthlyData[monthKey].lastDate = date;
+    }
+  });
+  
+  const chartData = Object.entries(monthlyData)
+    .slice(-12)
+    .map(([month, monthData]) => ({
+      date: month,
+      value: monthData.total,
+      fullDate: monthData.lastDate
+    }));
+
+  const trend = getTrend(data);
+  const trendPercentage = (trend * 100).toFixed(1);
+
+  const getColorByType = (type: string): string => {
+    switch(type) {
+      case 'confirmed': return '#3b82f6'; // blue-500
+      case 'deaths': return '#ef4444'; // red-500
+      case 'active': return '#10b981'; // green-500
+      default: return '#6b7280'; // gray-500
+    }
+  };
+
+  const chartConfig = {
+    value: {
+      label: selectedDataType === 'confirmed' ? 'Cas Confirmés' : 
+             selectedDataType === 'deaths' ? 'Décès' : 'Cas Actifs',
+      color: getColorByType(selectedDataType),
+    },
+  };
+
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 text-center">
+        <div className="text-4xl mb-4">📊</div>
+        <p className="text-gray-400">Aucune donnée disponible pour le graphique</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-100 mb-1">{title}</h3>
+              <p className="text-gray-400 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {subtitle} • {selectedDataType} • 12 derniers mois
+              </p>
+            </div>
+          </div>
+          
+          <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
+            trend > 0 ? 'text-red-400 bg-red-500/20 border-red-500/30' : 
+            trend < 0 ? 'text-green-400 bg-green-500/20 border-green-500/30' : 
+            'text-gray-400 bg-gray-500/20 border-gray-500/30'
+          }`}>
+            <div className="flex items-center gap-1">
+              <span className="text-xs">Tendance:</span>
+              <span className="font-bold">{trendPercentage}%</span>
+            </div>
+            <span className="text-lg">
+              {trend > 0 ? '↗️' : trend < 0 ? '↘️' : '→'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="p-6">
+        <ChartContainer config={chartConfig} className="h-80 w-full">
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={getColorByType(selectedDataType)} stopOpacity={0.3}/>
+                <stop offset="95%" stopColor={getColorByType(selectedDataType)} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis 
+              dataKey="date" 
+              stroke="#9ca3af"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis 
+              stroke="#9ca3af"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => value.toLocaleString()}
+            />
+            <ChartTooltip 
+              content={
+                <ChartTooltipContent 
+                  className="bg-gray-800 border-gray-600"
+                  labelFormatter={(label, payload) => {
+                    const item = payload?.[0]?.payload;
+                    return item ? new Date(item.fullDate).toLocaleDateString('fr-FR', {
+                      year: 'numeric',
+                      month: 'long'
+                    }) : label;
+                  }}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={getColorByType(selectedDataType)}
+              strokeWidth={2}
+              fill="url(#colorValue)"
+              fillOpacity={0.6}
+            />
+          </AreaChart>
+        </ChartContainer>
+
+        {/* Stats below chart */}
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Valeur actuelle</div>
+            <div className="text-lg font-bold text-gray-100">
+              {chartData[chartData.length - 1]?.value.toLocaleString() || '0'}
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Maximum</div>
+            <div className="text-lg font-bold text-gray-100">
+              {Math.max(...chartData.map(d => d.value)).toLocaleString()}
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Minimum</div>
+            <div className="text-lg font-bold text-gray-100">
+              {Math.min(...chartData.map(d => d.value)).toLocaleString()}
+            </div>
+          </div>
+          
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <div className="text-xs text-gray-400 mb-1">Moyenne</div>
+            <div className="text-lg font-bold text-gray-100">
+              {Math.round(chartData.reduce((sum, d) => sum + d.value, 0) / chartData.length).toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Composant pour afficher le top des pays
 const TopCountries: React.FC = () => {
   const { getTopCountries, selectedDataType } = useCovidData();
@@ -654,7 +860,7 @@ const CovidDashboardContent: React.FC = () => {
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
           {/* Left Column - Top Countries */}
-          <div className="xl:col-span-1">
+          <div className="xl:col-span-1 space-y-6">
             <TopCountries />
           </div>
 
@@ -669,6 +875,11 @@ const CovidDashboardContent: React.FC = () => {
             {/* Time Series Data */}
             <TimeSeriesData />
           </div>
+        </div>
+
+        {/* Chart Section - Full Width */}
+        <div className="mt-8">
+          <CovidChart />
         </div>
 
         {/* Controls at bottom */}
