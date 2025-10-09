@@ -189,7 +189,7 @@ export function NewsFeed() {
                     rel="noopener noreferrer"
                     className="flex items-center"
                   >
-                    Lire l'article
+                    Lire l&apos;article
                     <ArrowUpRight className="ml-1 h-3 w-3" />
                   </a>
                 </Button>

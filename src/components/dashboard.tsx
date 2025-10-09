@@ -1,8 +1,8 @@
 import React from 'react';
 import { CovidProvider, useCovidData, useCovidStats } from '@/services/covidContext';
-import { BarChart3, TrendingUp, Calendar } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { TrendingUp, Calendar } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
 
 interface CountryTimeSeriesData {
   total: Record<string, number>;
@@ -77,7 +77,7 @@ const GlobalStats: React.FC = () => {
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {statsData.map((stat, index) => (
+        {statsData.map((stat) => (
           <div key={stat.title} className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient} bg-gray-900 border border-gray-700 rounded-xl p-6 hover:scale-105 transition-all duration-300 group`}>
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -98,7 +98,7 @@ const GlobalStats: React.FC = () => {
                       <span className="mr-1">+</span>
                       {stat.daily.toLocaleString()}
                     </div>
-                    <span className="text-xs text-gray-400">aujourd'hui</span>
+                    <span className="text-xs text-gray-400">aujourd&apos;hui</span>
                   </div>
                 </div>
               </div>
@@ -252,7 +252,7 @@ const TimeSeriesData: React.FC = () => {
   } = useCovidData();
 
   let data: Record<string, number> = {};
-  let title = 'Évolution Temporelle';
+  const title = 'Évolution Temporelle';
   let subtitle = 'Données Globales';
 
   if (selectedCountry) {
@@ -393,7 +393,7 @@ const CovidChart: React.FC = () => {
   } = useCovidData();
 
   let data: Record<string, number> = {};
-  let title = 'Évolution des données COVID-19';
+  const title = 'Évolution des données COVID-19';
   let subtitle = 'Données Globales';
 
   if (selectedCountry) {

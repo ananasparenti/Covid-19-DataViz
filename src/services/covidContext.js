@@ -312,6 +312,7 @@ export const CovidProvider = ({ children }) => {
     if (!state.allData && !state.loading) {
       actions.loadAllData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const contextValue = {

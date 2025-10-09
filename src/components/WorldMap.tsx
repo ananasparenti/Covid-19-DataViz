@@ -17,11 +17,6 @@ const TileLayer = dynamic(
   { ssr: false }
 );
 
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-
 const Popup = dynamic(
   () => import('react-leaflet').then((mod) => mod.Popup),
   { ssr: false }
@@ -71,12 +66,9 @@ const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
   // Utiliser le contexte COVID
   const { 
     allData,
-    availableCountries,
     loading, 
     error, 
-    loadAllData,
-    getTopCountries,
-    selectedDataType
+    loadAllData
   } = useCovidData();
 
   useEffect(() => {
@@ -357,7 +349,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ data: externalData }) => {
                       {formatNumber(selectedCountry.population)}
                     </p>
                     <p className="text-gray-400 text-sm">
-                      Taux d'infection: <span className="text-yellow-400">{((selectedCountry.confirmed / selectedCountry.population) * 100).toFixed(2)}%</span>
+                      Taux d&apos;infection: <span className="text-yellow-400">{((selectedCountry.confirmed / selectedCountry.population) * 100).toFixed(2)}%</span>
                     </p>
                   </div>
                 )}
