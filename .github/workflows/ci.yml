@@ -23,16 +23,16 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: './covid-19-dataviz/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
       
       # Advanced caching for node_modules
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
           path: |
-            covid-19-dataviz/node_modules
+            node_modules
             ~/.npm
-          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('covid-19-dataviz/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ matrix.node-version }}-
             ${{ runner.os }}-node-
@@ -42,25 +42,22 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            covid-19-dataviz/.next/cache
-            covid-19-dataviz/.next/static
-            covid-19-dataviz/.next/server
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('covid-19-dataviz/package-lock.json') }}-${{ hashFiles('covid-19-dataviz/**/*.js', 'covid-19-dataviz/**/*.jsx', 'covid-19-dataviz/**/*.ts', 'covid-19-dataviz/**/*.tsx') }}
+            .next/cache
+            .next/static
+            .next/server
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('covid-19-dataviz/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('package-lock.json') }}-
             ${{ runner.os }}-nextjs-
       
       # Cache ESLint results
       - name: Cache ESLint
         uses: actions/cache@v4
         with:
-          path: covid-19-dataviz/.eslintcache
-          key: ${{ runner.os }}-eslint-${{ hashFiles('covid-19-dataviz/**/*.js', 'covid-19-dataviz/**/*.jsx', 'covid-19-dataviz/**/*.ts', 'covid-19-dataviz/**/*.tsx') }}
+          path: .eslintcache
+          key: ${{ runner.os }}-eslint-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
           restore-keys: |
             ${{ runner.os }}-eslint-
-      
-      - name: Change to project directory
-        run: cd covid-19-dataviz
       
       - name: Install dependencies
         run: |
@@ -69,17 +66,14 @@ jobs:
       
       - name: Run ESLint
         run: |
-          cd covid-19-dataviz
           npm run lint -- --cache --cache-location .eslintcache
       
       - name: Run tests
         run: |
-          cd covid-19-dataviz
           npm run test
       
       - name: Build application
         run: |
-          cd covid-19-dataviz
           npm run build
         env:
           NODE_ENV: production
@@ -90,6 +84,6 @@ jobs:
         with:
           name: build-files
           path: |
-            covid-19-dataviz/.next
-            covid-19-dataviz/out
+            .next
+            out
           retention-days: 7
