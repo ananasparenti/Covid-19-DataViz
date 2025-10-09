@@ -241,7 +241,7 @@ export function NewsFeed() {
                 <a href="https://covidtracking.com/" 
                    target="_blank" rel="noopener noreferrer" 
                    className="text-blue-400 hover:text-blue-300 hover:underline flex items-center transition-colors">
-                  COVID Tracking Project
+                  COVID Tracking Projects
                   <ExternalLink className="ml-1 h-3 w-3" />
                 </a>
               </li>
