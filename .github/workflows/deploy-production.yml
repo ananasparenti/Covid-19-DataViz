@@ -1,0 +1,141 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      deployment_reason:
+        description: 'Reason for manual deployment'
+        required: true
+        default: 'Manual production deployment'
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # First job: Run full CI tests before production deployment
+  pre-deployment-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: './covid-19-dataviz/package-lock.json'
+      
+      - name: Install dependencies
+        run: |
+          cd covid-19-dataviz
+          npm ci
+      
+      - name: Run linting
+        run: |
+          cd covid-19-dataviz
+          npm run lint
+      
+      - name: Run tests
+        run: |
+          cd covid-19-dataviz
+          npm run test
+      
+      - name: Build application
+        run: |
+          cd covid-19-dataviz
+          npm run build
+        env:
+          NODE_ENV: production
+
+  # Second job: Manual approval required for production deployment
+  approval:
+    needs: pre-deployment-checks
+    runs-on: ubuntu-latest
+    environment: 
+      name: production-approval
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Manual approval checkpoint
+        run: |
+          echo "🔒 Manual approval required for production deployment"
+          echo "Deployment reason: ${{ github.event.inputs.deployment_reason || 'Release deployment' }}"
+          echo "This step requires manual approval in GitHub Actions"
+
+  # Third job: Deploy to production after approval
+  deploy-production:
+    needs: [pre-deployment-checks, approval]
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: ${{ steps.deploy.outputs.deployment_url }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: './covid-19-dataviz/package-lock.json'
+      
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      
+      - name: Pull Vercel Environment Information
+        run: |
+          cd covid-19-dataviz
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Install dependencies
+        run: |
+          cd covid-19-dataviz
+          npm ci
+      
+      - name: Build Project Artifacts
+        run: |
+          cd covid-19-dataviz
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Deploy to Production
+        id: deploy
+        run: |
+          cd covid-19-dataviz
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "🚀 Deployed to production: $DEPLOYMENT_URL"
+      
+      - name: Create deployment summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # 🚀 Production Deployment Successful
+          
+          ## Deployment Details
+          - **Environment**: Production
+          - **URL**: ${{ steps.deploy.outputs.deployment_url }}
+          - **Commit**: \`${{ github.sha }}\`
+          - **Branch/Tag**: \`${{ github.ref_name }}\`
+          - **Triggered by**: ${{ github.actor }}
+          - **Deployment time**: $(date -u)
+          
+          ## Reason
+          ${{ github.event.inputs.deployment_reason || 'Automated deployment from release' }}
+          EOF
+      
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Production deployment completed successfully"
+          echo "Live URL: ${{ steps.deploy.outputs.deployment_url }}"
+      
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Production deployment failed"
+          echo "Please check the logs and try again"
+          exit 1
