@@ -20,6 +20,9 @@ This project transforms raw COVID-19 data into meaningful visualizations, offeri
 - **Data Source**: [Johns Hopkins CSSE COVID-19 Data Repository](https://github.com/CSSEGISandData/COVID-19)
 - **Reference**: Inspired by [Johns Hopkins COVID-19 Dashboard](https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6)
 
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
+
 ## Data Source
 
 The project utilizes the comprehensive COVID-19 dataset maintained by the Johns Hopkins University Center for Systems Science and Engineering (JHU CSSE), which provides:
@@ -75,9 +78,10 @@ Navigate through the dashboard to explore:
 
 This project was developed as a solo initiative. For suggestions or improvements, please feel free to open an issue or submit a pull request.
 
-## License
+## License [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 This project is open source and available under the [MIT License](LICENSE).
+
 
 ## Acknowledgments
 

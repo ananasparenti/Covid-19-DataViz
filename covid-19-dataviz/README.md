@@ -1,4 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# COVID-19 DataViz Application
+
+[![CI/CD Pipeline](https://github.com/ananasparenti/Simulated-Covid-19-DataViz/actions/workflows/ci.yml/badge.svg)](https://github.com/ananasparenti/Simulated-Covid-19-DataViz/actions/workflows/ci.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ananasparenti/Simulated-Covid-19-DataViz/ci.yml?branch=main&label=build)](https://github.com/ananasparenti/Simulated-Covid-19-DataViz/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/ananasparenti/Simulated-Covid-19-DataViz/ci.yml?branch=main&label=tests)](https://github.com/ananasparenti/Simulated-Covid-19-DataViz/actions)
+
+This is the COVID-19 data visualization dashboard built with [Next.js](https://nextjs.org), providing real-time pandemic statistics and interactive visualizations.
 
 ## Getting Started
 
