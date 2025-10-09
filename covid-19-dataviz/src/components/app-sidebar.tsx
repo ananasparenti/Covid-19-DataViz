@@ -5,6 +5,7 @@ import {
   BarChart3,
   Globe,
   Home,
+  Newspaper,
   Settings,
 } from "lucide-react"
 
@@ -32,6 +33,11 @@ const items = [
     title: "WorldMap",
     url: "/worldmap",
     icon: Globe,
+  },
+  {
+    title: "News",
+    url: "/news",
+    icon: Newspaper,
   },
 ]
 
